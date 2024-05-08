@@ -15,6 +15,7 @@ class Orders():
 
         order = client.buy_limit(symbol, quantity, buyPrice)
 
+     # the server would return 'msg'
         if 'msg' in order:
             Messages.get(order['msg'])
 
