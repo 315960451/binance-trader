@@ -232,9 +232,9 @@ class Trading():
     def stop(self, symbol, quantity, orderId, last_price):
         # If the target is not reached, stop-loss.
         stop_order = Orders.get_order(symbol, orderId)
-
+        # stopprice 就是止盈价格
         stopprice =  self.calc(float(stop_order['price']))
-
+        # loss price，怎么能用stop price计算？ 是否应该改成 lossprice = stop_order['price']-(stop_order['price'] * self.stop_loss/100)
         lossprice = stopprice - (stopprice * self.stop_loss / 100)
 
         status = stop_order['status']
@@ -367,7 +367,8 @@ class Trading():
 
     def calc(self, lastBid):
         try:
-
+            #bid refers to the highest price a buyer will pay.Because buy_price = buyPrice = lastBid + self.increasing,
+            #so here should use lastBid to estimation sell price
             #Estimated sell price considering commision
             return lastBid + (lastBid * self.option.profit / 100) + (lastBid *self.commision)
             #return lastBid + (lastBid * self.option.profit / 100)
