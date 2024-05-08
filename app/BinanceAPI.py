@@ -1,3 +1,5 @@
+# interact with the binance web using api to login ,get price and trade.
+# some api may have been changed.
 import time
 import hashlib
 import requests
@@ -23,7 +25,8 @@ class BinanceAPI:
     def ping(self):
         path = "%s/ping" % self.BASE_URL_V3
         return requests.get(path, timeout=30, verify=True).json()
-    
+
+    #symbol means the trade pair, eg. "BTCUSDT"
     def get_history(self, market, limit=50):
         path = "%s/historicalTrades" % self.BASE_URL
         params = {"symbol": market, "limit": limit}
@@ -44,15 +47,18 @@ class BinanceAPI:
         params = {"symbol": market}
         return self._get_no_sign(path, params)
 
+    # get order book of a trading pair
     def get_order_books(self, market, limit=50):
         path = "%s/depth" % self.BASE_URL
         params = {"symbol": market, "limit": limit}
         return self._get_no_sign(path, params)
-
+        
+    #Get current account information.
     def get_account(self):
         path = "%s/account" % self.BASE_URL_V3
         return self._get(path, {})
 
+    
     def get_products(self):
         return requests.get(self.PUBLIC_URL, timeout=30, verify=True).json()
    
@@ -64,6 +70,7 @@ class BinanceAPI:
         path = "%s/exchangeInfo" % self.BASE_URL
         return requests.get(path, timeout=30, verify=True).json()
 
+    
     def get_open_orders(self, market, limit = 100):
         path = "%s/openOrders" % self.BASE_URL_V3
         params = {"symbol": market}
@@ -93,25 +100,30 @@ class BinanceAPI:
         path = "%s/order" % self.BASE_URL_V3
         params = self._order(market, quantity, "SELL")
         return self._post(path, params)
-
+    
+    # check order status 
     def query_order(self, market, orderId):
         path = "%s/order" % self.BASE_URL_V3
         params = {"symbol": market, "orderId": orderId}
         return self._get(path, params)
-
+    
+    # cancel an order
     def cancel(self, market, order_id):
         path = "%s/order" % self.BASE_URL_V3
         params = {"symbol": market, "orderId": order_id}
         return self._delete(path, params)
 
+    # _single_leading_underscore: weak “internal use” indicator. E.g. from M import * does not import objects whose names start with an underscore.
+    # Convert a mapping object or a sequence of two-element tuples, which may contain str or bytes objects, to a percent-encoded ASCII text string. 
+    # example:https://www.cnblogs.com/gqv2009/p/urlencode.html
     def _get_no_sign(self, path, params={}):
         query = urlencode(params)
         url = "%s?%s" % (path, query)
         return requests.get(url, timeout=30, verify=True).json()
     
+    # input password or token to signature ?
     def _sign(self, params={}):
         data = params.copy()
-
         ts = int(1000 * time.time())
         data.update({"timestamp": ts})
         h = urlencode(data)
@@ -121,6 +133,7 @@ class BinanceAPI:
         data.update({"signature": signature})
         return data
 
+    # send signature and get response?
     def _get(self, path, params={}):
         params.update({"recvWindow": config.recv_window})
         query = urlencode(self._sign(params))
@@ -128,8 +141,10 @@ class BinanceAPI:
         header = {"X-MBX-APIKEY": self.key}
         return requests.get(url, headers=header, \
             timeout=30, verify=True).json()
-
+        
+    # send signature and post 
     def _post(self, path, params={}):
+        # dict.update will add the key:value to the dict
         params.update({"recvWindow": config.recv_window})
         query = urlencode(self._sign(params))
         url = "%s" % (path)
@@ -137,6 +152,7 @@ class BinanceAPI:
         return requests.post(url, headers=header, data=query, \
             timeout=30, verify=True).json()
 
+    # send order
     def _order(self, market, quantity, side, rate=None):
         params = {}
          
@@ -152,7 +168,8 @@ class BinanceAPI:
         params["quantity"] = '%.8f' % quantity
         
         return params
-           
+
+    # send signature and delete
     def _delete(self, path, params={}):
         params.update({"recvWindow": config.recv_window})
         query = urlencode(self._sign(params))
